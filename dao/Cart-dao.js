@@ -159,7 +159,6 @@ exports.createOrderWithTransaction = (connection, orderData) => {
       fullTotal,
       discount,
       sheduleType,
-      sheduleDate,
       sheduleTime,
       isPackage,
       latitude,
@@ -193,9 +192,9 @@ exports.createOrderWithTransaction = (connection, orderData) => {
           title, fullName, phonecode1, phone1, phonecode2, phone2,
           isCoupon, couponType, couponValue, total, fullTotal, discount,
           deliveryCharge,
-          sheduleType, sheduleDate, sheduleTime, isPackage, isFinalizeImdt,
+          sheduleType, sheduleTime, isPackage, isFinalizeImdt,
           latitude, longitude, assignCoMCenId
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       `;
 
       const values = [
@@ -213,7 +212,7 @@ exports.createOrderWithTransaction = (connection, orderData) => {
         couponValue,
         total, fullTotal, discount,
         parseFloat(deliveryCharge) || 0,
-        sheduleType, sheduleDate, sheduleTime,
+        sheduleType, sheduleTime,
         isPackage,
         isFinalizeImdt ? 1 : 0,
         latitude, longitude,
@@ -545,7 +544,8 @@ exports.createProcessOrderWithTransaction = (connection, processOrderData) => {
       creditPaid,
       moneyPaid,
       status,
-      reportStatus
+      reportStatus,
+      sheduleDate // now belongs to processorders
     } = processOrderData;
 
     const formatPaymentMethod = (method) => {
@@ -622,14 +622,12 @@ exports.createProcessOrderWithTransaction = (connection, processOrderData) => {
               finalPaymentMethod = 'Card';
             }
 
-            // invNo comes directly from the session variable set by the
-            // stored procedure call above — not bound as a JS param.
             const sql = `
-    INSERT INTO processorders (
-      orderId, invNo, transactionId, paymentMethod, 
-      isPaid, amount, creditPaid, moneyPaid, status, reportStatus, qrCode
-    ) VALUES (?, @new_inv_no, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-  `;
+              INSERT INTO processorders (
+                orderId, invNo, transactionId, paymentMethod, 
+                isPaid, amount, creditPaid, moneyPaid, status, reportStatus, qrCode, sheduleDate
+              ) VALUES (?, @new_inv_no, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            `;
 
             const values = [
               orderId,
@@ -641,7 +639,8 @@ exports.createProcessOrderWithTransaction = (connection, processOrderData) => {
               finalMoneyPaid,
               status || 'pending',
               reportStatus || null,
-              qrCodeUrl
+              qrCodeUrl,
+              sheduleDate || null
             ];
 
             connection.query(sql, values, (err3, insertResults) => {

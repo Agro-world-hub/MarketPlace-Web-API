@@ -257,7 +257,6 @@ exports.createOrder = (req, res) => {
               fullTotal: parseFloat(grandTotal) || 0,
               discount: parseFloat(discountAmount) || 0,
               sheduleType: scheduleType || null,
-              sheduleDate: deliveryDate ? new Date(deliveryDate) : null,
               sheduleTime: timeSlot || null,
               isPackage: cartItems.some(item => item.itemType === 'package') ? 1 : 0,
               latitude: geoLatitude ? parseFloat(geoLatitude) : null,
@@ -313,7 +312,8 @@ exports.createOrder = (req, res) => {
               creditPaid: parsedCreditPaid,
               moneyPaid: parsedMoneyPaid,
               status: 'Ordered',
-              isPaid: 0
+              isPaid: 0,
+              sheduleDate: deliveryDate ? new Date(deliveryDate) : null
             };
 
             return CartDao.createProcessOrderWithTransaction(connection, processOrderData);

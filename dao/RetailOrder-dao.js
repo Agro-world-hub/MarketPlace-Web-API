@@ -158,7 +158,7 @@ const getRetailOrderHistoryDao = async (userId, filter, page = 1, limit = 10) =>
     const orderQuery = `
       SELECT 
         po.id AS orderId,
-        o.sheduleDate AS scheduleDate,
+        po.sheduleDate AS scheduleDate,
         po.createdAt AS createdAt,
         o.sheduleTime AS scheduleTime,
         o.delivaryMethod AS delivaryMethod,
@@ -280,6 +280,8 @@ exports.insertHomeDeliveryDetails = (addressData) => {
   });
 };
 
+
+// check and remove this dao - Tharaka ---------------------------------------------------------
 exports.insertRetailOrder = (data) => {
   return new Promise((resolve, reject) => {
     const sql = `
@@ -315,6 +317,8 @@ exports.insertRetailOrder = (data) => {
     });
   });
 };
+
+//------------------------------------------------------------------------------------------
 
 const getLastAddress = (userId) => {
   return new Promise((resolve, reject) => {
@@ -707,7 +711,8 @@ const getRetailOrderByIdDao = async (orderId, userId) => {
 
     const orderSql = `
       SELECT 
-        o.*, 
+        o.*,
+        p.sheduleDate AS scheduleDate, 
         p.status AS processStatus,
         p.invNo AS invoiceNo,  
         CASE 
@@ -952,7 +957,7 @@ const getRetailOrderInvoiceByOrderIdDao = async (processOrderId, userId) => {
         o.delivaryMethod AS deliveryMethod,
         o.discount AS orderDiscount,
         o.createdAt AS invoiceDate,
-        o.sheduleDate AS scheduledDate,
+        po.sheduleDate AS scheduledDate,
         o.buildingType,
         o.fulltotal AS fullTotal,
         o.isCoupon,
