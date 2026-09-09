@@ -530,15 +530,18 @@ exports.getCashPaymentLimit = async (req, res) => {
   try {
     const { userId } = req.user;
 
-    const totalCompletedAmount = await CartDao.getUserCompletedOrdersTotal(userId);
+    const [totalCompletedAmount, baseCreditLimit] = await Promise.all([
+      CartDao.getUserCompletedOrdersTotal(userId),
+      CartDao.getUserCreditLimit(userId),
+    ]);
 
     let cashPaymentLimit;
     if (totalCompletedAmount >= 50000) {
-      cashPaymentLimit = 2500;
+      cashPaymentLimit = baseCreditLimit + 500;
     } else if (totalCompletedAmount >= 25000) {
-      cashPaymentLimit = 2250;
+      cashPaymentLimit = baseCreditLimit + 250;
     } else {
-      cashPaymentLimit = 2000;
+      cashPaymentLimit = baseCreditLimit;
     }
 
     res.status(200).json({
@@ -546,6 +549,7 @@ exports.getCashPaymentLimit = async (req, res) => {
       message: 'Cash payment limit retrieved successfully',
       data: {
         totalCompletedOrdersAmount: totalCompletedAmount,
+        baseCreditLimit,
         cashPaymentLimit,
       },
     });

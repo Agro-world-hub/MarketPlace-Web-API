@@ -921,3 +921,27 @@ exports.getUserCompletedOrdersTotal = (userId) => {
     });
   });
 };
+
+exports.getUserCreditLimit = (userId) => {
+  return new Promise((resolve, reject) => {
+    const sql = `
+      SELECT creditLimit
+      FROM marketplaceusers
+      WHERE id = ?
+      LIMIT 1
+    `;
+
+    collectionofficer.query(sql, [userId], (err, results) => {
+      if (err) {
+        console.error('Error getting user credit limit:', err);
+        reject(err);
+      } else {
+        // fall back to 2000 if user not found or value is null
+        const creditLimit = results.length > 0 && results[0].creditLimit !== null
+          ? parseFloat(results[0].creditLimit)
+          : 2000;
+        resolve(creditLimit);
+      }
+    });
+  });
+};
