@@ -1,5 +1,6 @@
 const ProductDao = require("../dao/Product-dao");
 const ProductValidate = require("../validations/product-validation");
+const jwt = require("jsonwebtoken");
 
 exports.getAllProduct = async (req, res) => {
   const { search } = req.query;
@@ -29,9 +30,6 @@ exports.getAllProduct = async (req, res) => {
 exports.getProductsByCategory = async (req, res) => {
   const { category, search } = req.query;
 
-  console.log('category', category, 'search', search);
-
-  // Only require category if no search parameter is provided
   if (!category && (!search || search.trim() === '')) {
     return res.status(400).json({
       status: false,
@@ -39,8 +37,20 @@ exports.getProductsByCategory = async (req, res) => {
     });
   }
 
+  let userId = null;
+  const authHeader = req.headers.authorization;
+  if (authHeader && authHeader.startsWith("Bearer ")) {
+    const token = authHeader.split(" ")[1];
+    try {
+      const decoded = jwt.verify(token, process.env.JWT_SECRET);
+      userId = decoded.id || decoded.userId || null;
+    } catch (err) {
+      userId = null;
+    }
+  }
+
   try {
-    const products = await ProductDao.getProductsByCategoryDao(category, search);
+    const products = await ProductDao.getProductsByCategoryDao(category, search, userId);
 
     if (products.length === 0) {
       return res.json({
@@ -466,11 +476,8 @@ exports.deleteSlide = async (req, res) => {
   }
 };
 
-// Updated Controller Function
 exports.getProductsByCategoryWholesale = async (req, res) => {
   const { category, search } = req.query;
-
-  console.log('wholesale category', category, 'search', search);
 
   if (!category) {
     return res.status(400).json({
@@ -478,9 +485,21 @@ exports.getProductsByCategoryWholesale = async (req, res) => {
       message: "Category parameter is required",
     });
   }
+  
+  let userId = null;
+  const authHeader = req.headers.authorization;
+  if (authHeader && authHeader.startsWith("Bearer ")) {
+    const token = authHeader.split(" ")[1];
+    try {
+      const decoded = jwt.verify(token, process.env.JWT_SECRET);
+      userId = decoded.id || decoded.userId || null;
+    } catch (err) {
+      userId = null;
+    }
+  }
 
   try {
-    const products = await ProductDao.getProductsByCategoryDaoWholesale(category, search);
+    const products = await ProductDao.getProductsByCategoryDaoWholesale(category, search, userId);
 
     if (products.length === 0) {
       return res.json({

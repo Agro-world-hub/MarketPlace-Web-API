@@ -3,7 +3,7 @@ const {
   collectionofficer,
 } = require("../startup/database");
 
-exports.getProductsByCategoryDao = (category, search) => {
+exports.getProductsByCategoryDao = (category, search, userId) => {
   return new Promise((resolve, reject) => {
     let sql = `
         SELECT 
@@ -25,15 +25,19 @@ exports.getProductsByCategoryDao = (category, search) => {
           c.cropNameEnglish,
           c.cropNameSinhala,
           c.cropNameTamil,
-          c.category
+          c.category,
+          CASE WHEN ca.id IS NOT NULL THEN 1 ELSE 0 END AS inCart
         FROM marketplaceitems m
         JOIN plant_care.cropvariety v ON m.varietyId = v.id
         JOIN plant_care.cropgroup c ON v.cropGroupId = c.id
+        LEFT JOIN cart ct ON ct.userId = ?
+        LEFT JOIN cartadditionalitems ca ON ca.cartId = ct.id AND ca.productId = m.id
         WHERE m.category = 'Retail'
           AND m.isEnable = 1
       `;
 
-    const params = [];
+    // userId param must come first — it's used in the LEFT JOIN above
+    const params = [userId];
 
     if (category && (!search || search.trim() === '')) {
       let categoryCondition = '';
@@ -92,6 +96,7 @@ exports.getProductsByCategoryDao = (category, search) => {
               ? parseInt(discountedPrice)
               : discountedPrice,
             discount: discountPercentage,
+            inCart: !!item.inCart, // convert 1/0 -> boolean
           };
         });
 
@@ -113,8 +118,7 @@ exports.getAllSlidesDao = () => {
   });
 };
 
-// Updated DAO Function
-exports.getProductsByCategoryDaoWholesale = (category, search) => {
+exports.getProductsByCategoryDaoWholesale = (category, search, userId) => {
   return new Promise((resolve, reject) => {
     let sql = `
       SELECT 
@@ -136,15 +140,19 @@ exports.getProductsByCategoryDaoWholesale = (category, search) => {
         c.cropNameEnglish,
         c.cropNameSinhala,
         c.cropNameTamil,
-        c.category
+        c.category,
+        CASE WHEN ca.id IS NOT NULL THEN 1 ELSE 0 END AS inCart
       FROM marketplaceitems m
       JOIN plant_care.cropvariety v ON m.varietyId = v.id
       JOIN plant_care.cropgroup c ON v.cropGroupId = c.id
+      LEFT JOIN cart ct ON ct.userId = ?
+      LEFT JOIN cartadditionalitems ca ON ca.cartId = ct.id AND ca.productId = m.id
       WHERE m.category = 'Wholesale'
         AND m.isEnable = 1
     `;
 
-    const params = [];
+    // userId param must come first — it's used in the LEFT JOIN above
+    const params = [userId];
 
     // Add category condition only if no search is provided or if search is empty
     if (category && (!search || search.trim() === '')) {
@@ -197,7 +205,8 @@ exports.getProductsByCategoryDaoWholesale = (category, search) => {
             discountedPrice: discountedPrice != null && discountedPrice % 1 === 0
               ? parseInt(discountedPrice)
               : discountedPrice,
-            discount: discountPercentage
+            discount: discountPercentage,
+            inCart: !!item.inCart, // convert 1/0 -> boolean
           };
         });
         resolve(formattedResults);
